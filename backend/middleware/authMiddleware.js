@@ -1,8 +1,7 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = (req, res, next) => {
+module.exports = function (req, res, next) {
   try {
-
     const authHeader = req.header("Authorization");
 
     if (!authHeader) {
@@ -11,6 +10,7 @@ module.exports = (req, res, next) => {
       });
     }
 
+    // REMOVE "Bearer "
     const token = authHeader.startsWith("Bearer ")
       ? authHeader.split(" ")[1]
       : authHeader;
@@ -24,13 +24,11 @@ module.exports = (req, res, next) => {
 
     next();
 
-  } catch (err) {
-
-    console.log("AUTH ERROR:", err.message);
+  } catch (error) {
+    console.log(error);
 
     res.status(401).json({
       message: "Invalid token",
     });
-
   }
 };
