@@ -10,9 +10,8 @@ module.exports = function (req, res, next) {
       });
     }
 
-    // REMOVE "Bearer "
     const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7)
+      ? authHeader.split(" ")[1]
       : authHeader;
 
     const decoded = jwt.verify(
