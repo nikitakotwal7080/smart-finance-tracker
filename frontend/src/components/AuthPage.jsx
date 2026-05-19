@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import heroImg from "../assets/hero.png";
 
 function AuthPage({ onAuth }) {
@@ -86,8 +86,8 @@ function AuthPage({ onAuth }) {
 
       // LOGIN
       if (mode === "login") {
-        const res = await axios.post(
-          "http://localhost:5000/api/auth/login",
+       const res = await API.post(
+         "/auth/login",
           {
             email: form.email,
             password: form.password
@@ -111,8 +111,8 @@ function AuthPage({ onAuth }) {
 
       // SIGNUP
       else {
-        await axios.post(
-          "http://localhost:5000/api/auth/register",
+        await API.post(
+          "/auth/register",
           {
             name: form.name,
             email: form.email,
