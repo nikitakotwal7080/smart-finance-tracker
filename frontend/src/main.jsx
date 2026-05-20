@@ -1,4 +1,4 @@
-import "./i18n/index.js";          // ← must be first
+import "./i18n";          // ← must be first
  
 import React from "react";
 import ReactDOM from "react-dom/client";
