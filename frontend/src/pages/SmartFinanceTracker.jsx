@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import API from "../services/api";
 import { 
   ResponsiveContainer, 
@@ -29,13 +30,14 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { GLOBAL_CSS } from "../styles/globalStyles";
 
-  const getWeekInMonth = (date) => {
+const getWeekInMonth = (date) => {
   const d = new Date(date);
   const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
   const firstDayOfWeek = firstDay.getDay();
   const dayOfMonth = d.getDate();
   return Math.ceil((dayOfMonth + firstDayOfWeek) / 7);
 };
+
 import useAnalytics from "../hooks/useAnalytics";
 import AuthPage from "../components/AuthPage";
 import ExpenseModal from "../components/ExpenseModal";
@@ -46,18 +48,47 @@ import EmptyState from "../components/EmptyState";
 import ChartTip from "../components/ChartTip";
 import heroImg from "../assets/hero.png";
 
+// ─── Language options ────────────────────────────────────────────────────────
+const LANGUAGES = [
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "hi", label: "हिंदी",   flag: "🇮🇳" },
+  { code: "mr", label: "मराठी",  flag: "🇮🇳" },
+];
 
 export default function SmartFinanceTracker(){
+
+  const { t, i18n } = useTranslation();
+
   // Inject CSS once
   useEffect(()=>{
     const id="sft-style";
     if(!document.getElementById(id)){
       const s=document.createElement("style");
-      s.id=id; s.textContent=GLOBAL_CSS;
+      s.id=id;
+      s.textContent=GLOBAL_CSS;
       document.head.appendChild(s);
     }
   },[]);
- 
+
+  // ── Language switcher state ──────────────────────────────────────────────
+  const [langOpen, setLangOpen] = useState(false);
+  const currentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0];
+
+  const switchLanguage = (code) => {
+    i18n.changeLanguage(code);          // react-i18next re-renders automatically
+    localStorage.setItem("sft-lang", code);
+    setLangOpen(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!langOpen) return;
+    const handler = () => setLangOpen(false);
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, [langOpen]);
+  // ────────────────────────────────────────────────────────────────────────
+
   const [user,setUser]=useState(null);
   const [ready,setReady]=useState(false);
   const [expenses,setExpenses]=useState([]);
@@ -78,14 +109,12 @@ export default function SmartFinanceTracker(){
   const [hiddenGoalIds,setHiddenGoalIds]=useState([]);
   const [budgetHistory,setBudgetHistory]=useState([]);
   const [loadingExpense, setLoadingExpense] = useState(false);
- 
+
   const loadExpenses = async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await API.get("/expenses", {
-        headers: {
-          Authorization: token,
-        },
+        headers: { Authorization: token },
       });
       setExpenses(res.data);
     } catch (err) {
@@ -97,13 +126,8 @@ export default function SmartFinanceTracker(){
     try {
       const token = localStorage.getItem("token");
       const res = await API.get("/budget", {
-        headers: {
-          Authorization: token,
-        },
-        params: {
-          year: selectedYear,
-          month: selectedMonth,
-        },
+        headers: { Authorization: token },
+        params: { year: selectedYear, month: selectedMonth },
       });
       setBudget(res.data.amount);
       setBudgetInput(res.data.amount);
@@ -116,9 +140,7 @@ export default function SmartFinanceTracker(){
     try {
       const token = localStorage.getItem("token");
       const res = await API.get("/budget/history", {
-        headers: {
-          Authorization: token,
-        },
+        headers: { Authorization: token },
       });
       setBudgetHistory(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
@@ -131,16 +153,8 @@ export default function SmartFinanceTracker(){
       const token = localStorage.getItem("token");
       const res = await API.post(
         "/budget",
-        {
-          budget: value,
-          year: selectedYear,
-          month: selectedMonth,
-        },
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
+        { budget: value, year: selectedYear, month: selectedMonth },
+        { headers: { Authorization: token } }
       );
       setBudgetHistory(Array.isArray(res.data.history) ? res.data.history : budgetHistory);
     } catch (err) {
@@ -151,15 +165,11 @@ export default function SmartFinanceTracker(){
   const createExpense = async (data) => {
     if (loadingExpense) return;
     setLoadingExpense(true);
-
     try {
       const token = localStorage.getItem("token");
       const res = await API.post("/expenses", data, {
-        headers: {
-          Authorization: token,
-        },
+        headers: { Authorization: token },
       });
-
       if (res && res.data) {
         setExpenses((prev) => [res.data, ...prev]);
         showToast("Expense added ✓", "success");
@@ -171,7 +181,7 @@ export default function SmartFinanceTracker(){
     } catch (err) {
       const msg = (err && err.response && err.response.data && err.response.data.message) || err.message || "Failed to add expense";
       showToast(msg, "error");
-       return null;
+      return null;
     } finally {
       setLoadingExpense(false);
     }
@@ -181,9 +191,7 @@ export default function SmartFinanceTracker(){
     try {
       const token = localStorage.getItem("token");
       const res = await API.put(`/expenses/${id}`, data, {
-        headers: {
-          Authorization: token,
-        },
+        headers: { Authorization: token },
       });
       if (res && res.data) {
         setExpenses((prev) => prev.map((e) => (e._id === id ? res.data : e)));
@@ -205,9 +213,7 @@ export default function SmartFinanceTracker(){
     try {
       const token = localStorage.getItem("token");
       await API.delete(`/expenses/${id}`, {
-        headers: {
-          Authorization: token,
-        },
+        headers: { Authorization: token },
       });
       setExpenses((prev) => prev.filter((e) => e._id !== id));
     } catch (err) {
@@ -216,54 +222,41 @@ export default function SmartFinanceTracker(){
   };
 
   useEffect(() => {
-  const initAuth = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
+    const initAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) { setReady(true); return; }
+        const res = await API.get("/auth/me", {
+          headers: { Authorization: token },
+        });
+        setUser(res.data);
+      } catch (err) {
+        console.log(err);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      } finally {
         setReady(true);
-        return;
       }
+    };
+    initAuth();
+  }, []);
 
-      const res = await API.get("/auth/me", {
-        headers: {
-          Authorization: token,
-        },
-      });
-
-      setUser(res.data);
-    } catch (err) {
-      console.log(err);
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } finally {
-      setReady(true);
-    }
-  };
-
-  initAuth();
-}, []);
- 
   useEffect(() => {
     if (!user) return;
-
     setCustomGoals([]);
     setHiddenGoalIds([]);
-
     setTab("dashboard");
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
-
     loadExpenses();
     loadBudget();
     loadBudgetHistory();
   }, [user, selectedMonth, selectedYear]);
- 
+
   const showToast=(msg,type="success")=>setToast({msg,type});
- 
+
   const addOrUpdate=async(data)=>{
     if (modal && modal._id) {
       await updateExpense(modal._id, data);
@@ -293,7 +286,7 @@ export default function SmartFinanceTracker(){
     setBudget(0);
     setAiIns([]);
   };
- 
+
   const A=useAnalytics(expenses,budget,selectedMonth,selectedYear);
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -305,13 +298,8 @@ export default function SmartFinanceTracker(){
     setSelectedYear(year);
   };
 
-  const persistCustomGoals = (next) => {
-  setCustomGoals(next);
-};
-
-const persistHiddenGoals = (next) => {
-  setHiddenGoalIds(next);
-};
+  const persistCustomGoals = (next) => { setCustomGoals(next); };
+  const persistHiddenGoals = (next) => { setHiddenGoalIds(next); };
 
   const removeCustomGoal = (id) => {
     const next = customGoals.filter(g => g.id !== id);
@@ -320,24 +308,20 @@ const persistHiddenGoals = (next) => {
   };
 
   const removeGoal = (goal) => {
-    if (goal.isCustom) {
-      removeCustomGoal(goal.id);
-      return;
-    }
+    if (goal.isCustom) { removeCustomGoal(goal.id); return; }
     if (!hiddenGoalIds.includes(goal.id)) {
       persistHiddenGoals([...hiddenGoalIds, goal.id]);
       showToast("Suggestion hidden", "info");
     }
   };
-  
-  // Get days in selected month
+
   const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
   const displayBudgetPct = A.budgetPct;
   const displayBudgetPctBar = A.budgetPctBar;
   const displayRemaining = A.remaining;
   const displayRemainingText = displayRemaining >= 0 ? fmt(displayRemaining) : `${fmt(Math.abs(displayRemaining))} over`;
   const displaySpent = fmt(A.currTotal);
-  
+
   const savedAcrossMonths = useMemo(() => {
     if (!user) return 0;
     return budgetHistory.reduce((sum, record) => {
@@ -352,8 +336,7 @@ const persistHiddenGoals = (next) => {
       return sum + Math.max(0, budgetVal - spent);
     }, 0);
   }, [expenses, budgetHistory, user]);
-  
-  // Calculate previous month
+
   const prevMonth = selectedMonth === 0 ? 11 : selectedMonth - 1;
   const prevYear = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
 
@@ -366,44 +349,32 @@ const persistHiddenGoals = (next) => {
     const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
     return monthOk&&cOk&&sOk;
   }).sort((a,b)=>new Date(b.date)-new Date(a.date)),[expenses,filterCat,search,selectedMonth,selectedYear]);
- 
-  // Calculate week-wise data for previous month
+
   const prevMonthWeekwiseData = useMemo(() => {
     const prevMonthExpenses = expenses.filter(e => {
       const d = new Date(e.date);
       return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
     });
-    
     const weekMap = {};
     prevMonthExpenses.forEach((e) => {
       if (!e.date) return;
       const weekNum = getWeekInMonth(e.date);
       const weekKey = `Week ${weekNum}`;
       if (!weekMap[weekKey]) {
-        weekMap[weekKey] = {
-          week: weekNum,
-          transactions: [],
-          total: 0,
-          byCategory: {},
-        };
+        weekMap[weekKey] = { week: weekNum, transactions: [], total: 0, byCategory: {} };
       }
       weekMap[weekKey].transactions.push(e);
       weekMap[weekKey].total += Number(e.amount || 0);
       const cat = e.category;
       weekMap[weekKey].byCategory[cat] = (weekMap[weekKey].byCategory[cat] || 0) + Number(e.amount || 0);
     });
-    
     return Object.values(weekMap).sort((a, b) => a.week - b.week);
   }, [expenses, prevMonth, prevYear]);
 
   const loadAI=async()=>{
     setAiLoading(true);
     try{
-      // Mock AI analysis based on actual data
       const insights = [];
-      const curr = A.curr; // Use selected month data from analytics
-
-      // Insight 1: Spending trend
       if (A.prevTotal > 0) {
         const change = ((A.currTotal - A.prevTotal) / A.prevTotal * 100).toFixed(1);
         insights.push({
@@ -412,8 +383,6 @@ const persistHiddenGoals = (next) => {
           text: `Spending ${change > 0 ? "increased" : "decreased"} by ${Math.abs(change)}% vs last month (${fmt(A.prevTotal)} → ${fmt(A.currTotal)})`
         });
       }
-
-      // Insight 2: Top category
       const topCat = Object.entries(A.currCat).sort((a,b)=>b[1]-a[1])[0];
       if (topCat && topCat[1] > 0) {
         const pct = Math.round((topCat[1] / A.currTotal) * 100);
@@ -423,8 +392,6 @@ const persistHiddenGoals = (next) => {
           text: `${topCat[0]} dominates at ${pct}% of spending (${fmt(topCat[1])}) - consider optimizing this category`
         });
       }
-
-      // Insight 3: Budget or savings advice
       if (budget > 0) {
         if (A.budgetPct >= 80) {
           insights.push({
@@ -446,8 +413,6 @@ const persistHiddenGoals = (next) => {
           text: `Set a monthly budget to unlock personalized savings goals and spending alerts`
         });
       }
-
-      // Ensure exactly 3 insights
       while (insights.length < 3) {
         insights.push({
           icon: "💡",
@@ -455,35 +420,33 @@ const persistHiddenGoals = (next) => {
           text: `Track more expenses to get deeper AI insights about your spending patterns`
         });
       }
-
       setAiIns(insights.slice(0, 3));
     }catch(e){
       setAiIns([{icon:"⚠️",type:"info",text:"AI analysis unavailable right now. The pattern-based insights below are still accurate."}]);
     }
     setAiLoading(false);
   };
- 
+
   const exportCSV=()=>{
     const rows=["Date,Category,Amount,Notes",...expenses.map(e=>`${e.date},${e.category},${e.amount},"${(e.notes||"").replace(/"/g,'""')}"`)] .join("\n");
     const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows],{type:"text/csv"}));
     a.download=`finance_${user.name.replace(/ /g,"_")}_${todayS()}.csv`;a.click();
     showToast("CSV exported","success");
   };
- 
+
   if(!ready)return null;
   if(!user)return <AuthPage onAuth={u=>setUser(u)}/>;
- 
+
   const TABS=[
-    {id:"dashboard",label:"Dashboard",icon:"📊"},
-    {id:"insights",label:"Insights",icon:"🧠"},
-    {id:"savings",label:"Savings",icon:"💡"},
-    {id:"predictions",label:"Predictions",icon:"🔮"},
-    {id:"expenses",label:"Expenses",icon:"📋"},
-    {id:"budget",label:"Budget",icon:"💰"}
+    {id:"dashboard",label:t("dashboard"),icon:"📊"},
+    {id:"insights",label:t("insights"),icon:"🧠"},
+    {id:"savings",label:t("savings"),icon:"💡"},
+    {id:"predictions",label:t("predictions"),icon:"🔮"},
+    {id:"expenses",label:t("expenses"),icon:"📋"},
+    {id:"budget",label:t("budget"),icon:"💰"}
   ];
 
   const savingsTips = [];
-
   if (expenses.length > 0) {
     if (A.budgetPct >= 80) {
       const diff = Math.round(budget - A.currTotal);
@@ -510,16 +473,76 @@ const persistHiddenGoals = (next) => {
     <div className="aFadeIn" style={{minHeight:"100vh",background:"var(--bg)",width:"100%",position:"relative",overflow:"hidden"}}>
       <div className="blob" style={{width:260,height:260,top:80,left:-40,background:"rgba(94,234,212,.16)",pointerEvents:"none"}} />
       <div className="blob" style={{width:200,height:200,bottom:100,right:-30,background:"rgba(129,140,248,.16)",pointerEvents:"none"}} />
-      {/* NAV */}
+
+      {/* ── NAV ──────────────────────────────────────────────────────────── */}
       <nav className="aFadeDown" style={{position:"sticky",top:0,zIndex:200,background:"rgba(7,9,15,.93)",backdropFilter:"blur(20px)",borderBottom:"1px solid var(--border)",padding:"0 20px",display:"flex",alignItems:"center",height:58,gap:12}}>
         <span style={{fontSize:22}}>💰</span>
         <span style={{fontWeight:900,fontSize:15,background:"linear-gradient(135deg,var(--accent),var(--accent2))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginRight:"auto"}}>SmartFinance</span>
         <span style={{fontSize:13,color:"var(--muted)"}} className="hide-sm">Hi, {user.name.split(" ")[0]} 👋</span>
+
+        {/* ── Language Switcher ─────────────────────────────────────────── */}
+        <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
+          <button
+            onClick={()=>setLangOpen(o=>!o)}
+            style={{
+              display:"flex",alignItems:"center",gap:6,
+              padding:"6px 12px",borderRadius:10,
+              background:"rgba(255,255,255,.06)",
+              border:"1px solid rgba(255,255,255,.12)",
+              color:"var(--text)",fontSize:12,fontWeight:600,
+              cursor:"pointer",transition:"all .15s"
+            }}
+            title={t("selectLanguage")}
+          >
+            <span>{currentLang.flag}</span>
+            <span>{currentLang.label}</span>
+            <span style={{fontSize:10,opacity:.6}}>{langOpen?"▲":"▼"}</span>
+          </button>
+
+          {langOpen&&(
+            <div style={{
+              position:"absolute",top:"calc(100% + 6px)",right:0,
+              background:"rgba(14,17,23,.97)",
+              border:"1px solid rgba(255,255,255,.12)",
+              borderRadius:12,overflow:"hidden",
+              boxShadow:"0 8px 32px rgba(0,0,0,.5)",
+              minWidth:140,zIndex:999
+            }}>
+              {LANGUAGES.map(lang=>(
+                <button
+                  key={lang.code}
+                  onClick={()=>switchLanguage(lang.code)}
+                  style={{
+                    display:"flex",alignItems:"center",gap:10,
+                    width:"100%",padding:"10px 16px",
+                    background: lang.code===i18n.language
+                      ? "rgba(79,158,255,.12)"
+                      : "transparent",
+                    color: lang.code===i18n.language
+                      ? "var(--accent)"
+                      : "var(--text)",
+                    border:"none",cursor:"pointer",
+                    fontSize:13,fontWeight:600,
+                    textAlign:"left",transition:"all .12s"
+                  }}
+                  onMouseEnter={e=>{ if(lang.code!==i18n.language) e.currentTarget.style.background="rgba(255,255,255,.05)"; }}
+                  onMouseLeave={e=>{ if(lang.code!==i18n.language) e.currentTarget.style.background="transparent"; }}
+                >
+                  <span style={{fontSize:16}}>{lang.flag}</span>
+                  <span>{lang.label}</span>
+                  {lang.code===i18n.language&&<span style={{marginLeft:"auto",fontSize:11}}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* ─────────────────────────────────────────────────────────────── */}
+
         <button onClick={exportCSV} className="btn-ghost" style={{fontSize:12,padding:"6px 12px"}}>⬇ CSV</button>
         <button onClick={()=>setModal("add")} style={{padding:"7px 16px",borderRadius:10,background:"linear-gradient(135deg,var(--accent),var(--accent2))",color:"white",fontWeight:700,fontSize:13,boxShadow:"0 2px 12px rgba(79,158,255,.3)"}}>+ Add</button>
         <button onClick={logout} style={{padding:"7px 12px",borderRadius:10,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"var(--red)",fontSize:13,fontWeight:600}}>Logout</button>
       </nav>
- 
+
       {/* TABS */}
       <div className="aFadeUp" style={{position:"sticky",top:58,zIndex:190,width:"100%",background:"rgba(14,17,23,.85)",backdropFilter:"blur(12px)",borderBottom:"1px solid var(--border)",display:"flex",gap:2,overflowX:"auto"}}>
         {TABS.map((t)=>(
@@ -547,12 +570,12 @@ const persistHiddenGoals = (next) => {
       </div>
 
       <div style={{width:"100%",maxWidth:1600,margin:"0 auto",padding:"24px 24px 56px",transition:"all .3s ease"}}>
- 
+
         {/* ═══ DASHBOARD ═══ */}
         {tab==="dashboard"&&(
           <div className="aFadeIn">
             {expenses.length===0?(
-              <EmptyState image={heroImg} icon="📊" title="Welcome to SmartFinance!" sub="Add your first expense to see your personal financial dashboard with charts, insights, and predictions." action="+ Add First Expense" onAction={()=>setModal("add")}/>
+              <EmptyState image={heroImg} icon="📊" title={t("Welcome to SmartFinance!")} sub={t("Add your first expense to see your personal financial dashboard with charts, insights, and predictions.")} action={t("+ Add First Expense")} onAction={()=>setModal("add")}/>
             ):(
               <>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}} className="g4">
@@ -561,7 +584,7 @@ const persistHiddenGoals = (next) => {
                   <StatCard label="Daily Average" value={fmt(Math.round(A.currTotal/(daysInMonth||1)))} sub="₹ per day" accent="var(--orange)" icon="📅" delay={.12}/>
                   <StatCard label="Next Month Est." value={fmt(A.predicted)} sub="Moving avg" accent="var(--amber)" icon="🔮" delay={.18}/>
                 </div>
- 
+
                 {budget>0&&(
                   <div className="card aFadeUp" style={{marginBottom:20,animationDelay:".22s"}}>
                     <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:10}}>
@@ -572,7 +595,7 @@ const persistHiddenGoals = (next) => {
                     {A.budgetPct>=80&&<p style={{fontSize:12,color:"var(--amber)",marginTop:8}}>⚠️ You've used {A.budgetPct}% of your monthly budget.</p>}
                   </div>
                 )}
- 
+
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}} className="g2">
                   <div className="card aFadeUp" style={{animationDelay:".26s"}}>
                     <h3 style={{fontSize:12,fontWeight:700,color:"var(--text)",marginBottom:14,textTransform:"uppercase",letterSpacing:"1px"}}>Daily Spending — {MONTH_NAMES[selectedMonth]} {selectedYear}</h3>
@@ -605,7 +628,7 @@ const persistHiddenGoals = (next) => {
                     </ResponsiveContainer>
                   </div>
                 </div>
- 
+
                 <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:16,marginBottom:16}} className="g2">
                   <div className="card aFadeUp" style={{animationDelay:".34s"}}>
                     <h3 style={{fontSize:12,fontWeight:700,color:"var(--muted)",marginBottom:14,textTransform:"uppercase",letterSpacing:"1px"}}>6-Month Trend</h3>
@@ -642,12 +665,12 @@ const persistHiddenGoals = (next) => {
                     </div>
                   </div>
                 </div>
- 
+
                 {A.insights.length>0&&(
                   <div className="card aFadeUp" style={{animationDelay:".42s"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                      <h3 style={{fontSize:14,fontWeight:700}}>🧠 Key Insights</h3>
-                      <button onClick={()=>setTab("insights")} style={{background:"none",color:"var(--accent)",fontSize:12,fontWeight:600}}>See all →</button>
+                      <h3 style={{fontSize:14,fontWeight:700}}>🧠 {t("keyInsights")}</h3>
+                      <button onClick={()=>setTab("insights")} style={{background:"none",color:"var(--accent)",fontSize:12,fontWeight:600}}>{t("seeAll")} →</button>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {A.insights.slice(0,3).map((ins,i)=><InsightCard key={i} {...ins} delay={i*.06}/>)}
@@ -658,12 +681,12 @@ const persistHiddenGoals = (next) => {
             )}
           </div>
         )}
- 
+
         {/* ═══ INSIGHTS ═══ */}
         {tab==="insights"&&(
           <div className="aFadeIn">
             {expenses.length===0?(
-              <EmptyState image={heroImg} icon="🧠" title="No data to analyze yet" sub="Start tracking your expenses and come back here to discover powerful patterns in your spending habits." action="+ Add Expense" onAction={()=>setModal("add")}/>
+              <EmptyState image={heroImg} icon="🧠" title={t("No data to analyze yet")} sub={t("Start tracking your expenses and come back here to discover powerful patterns in your spending habits.")} action={t("+ Add Expense")} onAction={()=>setModal("add")}/>
             ):(
               <>
                 <div style={{background:"linear-gradient(135deg,rgba(79,158,255,.05),rgba(167,139,250,.05))",border:"1px solid rgba(167,139,250,.2)",borderRadius:20,padding:24,marginBottom:20}} className="aFadeUp">
@@ -675,12 +698,12 @@ const persistHiddenGoals = (next) => {
                   </div>
                   {aiIns.length>0&&<div style={{display:"flex",flexDirection:"column",gap:8}} className="aFadeUp d3">{aiIns.map((ins,i)=><InsightCard key={i} {...ins} delay={i*.08}/>)}</div>}
                 </div>
- 
+
                 <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}} className="aFadeUp d4">📊 Pattern Analysis</h3>
                 <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}} className="aFadeUp d5">
                   {A.insights.map((ins,i)=><InsightCard key={i} {...ins} delay={i*.04}/>)}
                 </div>
- 
+
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}} className="g2">
                   <div className="card aFadeUp" style={{animationDelay:".34s"}}>
                     <h3 style={{fontSize:12,fontWeight:700,color:"var(--muted)",marginBottom:14,textTransform:"uppercase",letterSpacing:"1px"}}>Spending by Day of Week</h3>
@@ -724,7 +747,7 @@ const persistHiddenGoals = (next) => {
             )}
           </div>
         )}
- 
+
         {/* ═══ SAVINGS SUGGESTIONS ═══ */}
         {tab==="savings"&&(
           <div className="aFadeIn">
@@ -732,7 +755,6 @@ const persistHiddenGoals = (next) => {
               <EmptyState image={heroImg} icon="💡" title="No expenses yet" sub="Add expenses first to generate personalized savings advice." action="+ Add Expense" onAction={()=>setModal("add")}/>
             ) : (
               <>
-                {/* Savings Calculator & Goals */}
                 {(() => {
                   const savedThisMonth = Math.max(0, budget - A.currTotal);
                   const monthsTracked = budgetHistory.length || 1;
@@ -754,28 +776,22 @@ const persistHiddenGoals = (next) => {
                     })),
                     ...motivationalGoals.filter((goal) => !hiddenGoalIds.includes(goal.id))
                   ];
-                  
+
                   const addCustomGoal = () => {
                     const title = customGoalTitle.trim();
                     const target = Number(customGoalTarget);
-                    if (!title) {
-                      showToast("Enter a custom goal title", "info");
-                      return;
-                    }
-                    if (!target || target <= 0) {
-                      showToast("Enter a valid target amount", "info");
-                      return;
-                    }
+                    if (!title) { showToast("Enter a custom goal title", "info"); return; }
+                    if (!target || target <= 0) { showToast("Enter a valid target amount", "info"); return; }
                     const newGoal = { id: uid(), title, target };
                     persistCustomGoals([newGoal, ...customGoals]);
                     setCustomGoalTitle("");
                     setCustomGoalTarget("");
                     showToast("Custom savings goal added", "success");
                   };
-                  
+
                   return (
                     <>
-<div className="card aFadeUp" style={{background:"linear-gradient(135deg,rgba(52,211,153,.08),rgba(34,211,238,.08))",border:"1px solid rgba(52,211,153,.2)",borderRadius:22,padding:32,marginBottom:24,position:"relative",overflow:"hidden"}}>
+                      <div className="card aFadeUp" style={{background:"linear-gradient(135deg,rgba(52,211,153,.08),rgba(34,211,238,.08))",border:"1px solid rgba(52,211,153,.2)",borderRadius:22,padding:32,marginBottom:24,position:"relative",overflow:"hidden"}}>
                         <div style={{position:"absolute",top:-20,right:-20,fontSize:100,opacity:0.08}}>💰</div>
                         <div style={{position:"relative",zIndex:1}}>
                           <p style={{fontSize:12,color:"var(--muted)",marginBottom:12,textTransform:"uppercase",letterSpacing:"1px",fontWeight:600}}>🏦 Saved Money</p>
@@ -794,7 +810,6 @@ const persistHiddenGoals = (next) => {
                         </div>
                       </div>
 
-                      {/* Custom Savings Goal Input */}
                       <div className="card aFadeUp" style={{padding:24,marginBottom:24,display:"grid",gap:14,border:"1px solid rgba(255,255,255,.08)"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
                           <div>
@@ -804,19 +819,8 @@ const persistHiddenGoals = (next) => {
                           <button className="btn-primary" onClick={addCustomGoal} style={{minWidth:160}}>Save Goal</button>
                         </div>
                         <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:12,flexWrap:"wrap"}}>
-                          <input
-                            value={customGoalTitle}
-                            onChange={(e)=>setCustomGoalTitle(e.target.value)}
-                            placeholder="Dream holiday, budget dinner night..."
-                            style={{padding:14,borderRadius:14,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.04)",color:"#fff",outline:"none",fontSize:14,width:"100%"}}
-                          />
-                          <input
-                            value={customGoalTarget}
-                            onChange={(e)=>setCustomGoalTarget(e.target.value)}
-                            placeholder="Target amount"
-                            type="number"
-                            style={{padding:14,borderRadius:14,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.04)",color:"#fff",outline:"none",fontSize:14,width:"100%"}}
-                          />
+                          <input value={customGoalTitle} onChange={(e)=>setCustomGoalTitle(e.target.value)} placeholder="Dream holiday, budget dinner night..." style={{padding:14,borderRadius:14,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.04)",color:"#fff",outline:"none",fontSize:14,width:"100%"}}/>
+                          <input value={customGoalTarget} onChange={(e)=>setCustomGoalTarget(e.target.value)} placeholder="Target amount" type="number" style={{padding:14,borderRadius:14,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.04)",color:"#fff",outline:"none",fontSize:14,width:"100%"}}/>
                         </div>
                       </div>
 
@@ -835,19 +839,13 @@ const persistHiddenGoals = (next) => {
                                   <div style={{fontSize:14,fontWeight:700,color:"#ffffff"}}>{goal.title}</div>
                                   <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>Target ₹{fmt(goal.target)}</div>
                                 </div>
-                                <button
-                                  onClick={()=>removeCustomGoal(goal.id)}
-                                  style={{padding:"8px 14px",borderRadius:12,border:"1px solid rgba(255,255,255,.16)",background:"rgba(255,255,255,.08)",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700}}
-                                >
-                                  Delete
-                                </button>
+                                <button onClick={()=>removeCustomGoal(goal.id)} style={{padding:"8px 14px",borderRadius:12,border:"1px solid rgba(255,255,255,.16)",background:"rgba(255,255,255,.08)",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700}}>Delete</button>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
-                      
-                      {/* What You Could Achieve */}
+
                       <h3 style={{fontSize:15,fontWeight:700,marginBottom:16,color:"#ffffff"}}>🎯 What You Could Achieve With These Savings</h3>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
                         {allGoals.map((goal,i)=>{
@@ -855,14 +853,7 @@ const persistHiddenGoals = (next) => {
                           const achievable = savedAcrossMonths >= goal.amount;
                           return (
                             <div key={goal.id || `${goal.label}-${i}`} className="card aFadeUp" style={{animationDelay:`${i*0.08}s`,position:"relative",overflow:"hidden",borderLeft:`4px solid ${achievable?"var(--green)":"rgba(255,255,255,.1)"}`}}>
-                              <button
-                                onClick={()=>removeGoal(goal)}
-                                style={{position:"absolute",top:12,right:12,padding:"8px 12px",border:"1px solid rgba(248,113,113,.45)",borderRadius:999,background:"rgba(248,113,113,.18)",color:"#fee2e2",cursor:"pointer",fontSize:12,fontWeight:700,backdropFilter:"blur(4px)"}}
-                                title="Remove savings goal"
-                                aria-label={`Remove savings goal ${goal.label}`}
-                              >
-                                Remove
-                              </button>
+                              <button onClick={()=>removeGoal(goal)} style={{position:"absolute",top:12,right:12,padding:"8px 12px",border:"1px solid rgba(248,113,113,.45)",borderRadius:999,background:"rgba(248,113,113,.18)",color:"#fee2e2",cursor:"pointer",fontSize:12,fontWeight:700,backdropFilter:"blur(4px)"}} title="Remove savings goal" aria-label={`Remove savings goal ${goal.label}`}>Remove</button>
                               <div style={{fontSize:32,marginBottom:8}}>{goal.emoji}</div>
                               <h4 style={{fontSize:14,fontWeight:800,marginBottom:4,color:"#ffffff"}}>{goal.label}</h4>
                               <p style={{fontSize:12,color:"var(--muted)",marginBottom:12}}>Needs ₹{fmt(goal.amount)}</p>
@@ -874,8 +865,7 @@ const persistHiddenGoals = (next) => {
                           );
                         })}
                       </div>
-                      
-                      {/* Savings Tips */}
+
                       {savingsTips.length > 0 && (
                         <>
                           <h3 style={{fontSize:15,fontWeight:700,marginBottom:16,color:"#ffffff"}}>💡 Personalized Tips</h3>
@@ -889,7 +879,7 @@ const persistHiddenGoals = (next) => {
                           </div>
                         </>
                       )}
-                      
+
                       {savingsTips.length === 0 && savedAcrossMonths === 0 && (
                         <div className="card" style={{padding:20,textAlign:"center",background:"linear-gradient(135deg,rgba(34,211,238,.05),rgba(129,140,248,.05))",border:"1px solid rgba(129,140,248,.2)"}}>
                           <h3 style={{fontSize:16,fontWeight:700,marginBottom:8,color:"#ffffff"}}>You're already optimized 🎉</h3>
@@ -919,7 +909,7 @@ const persistHiddenGoals = (next) => {
                   {budget>0&&A.predicted>budget&&<div style={{display:"inline-block",marginTop:16,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.25)",borderRadius:12,padding:"10px 20px",fontSize:13,fontWeight:600,color:"var(--red)"}}>⚠️ Predicted {fmt(A.predicted-budget)} over your {fmt(budget)} budget</div>}
                   {budget>0&&A.predicted<=budget&&<div style={{display:"inline-block",marginTop:16,background:"rgba(52,211,153,.08)",border:"1px solid rgba(52,211,153,.25)",borderRadius:12,padding:"10px 20px",fontSize:13,fontWeight:600,color:"var(--green)"}}>✅ Predicted within budget — {fmt(budget-A.predicted)} to spare</div>}
                 </div>
- 
+
                 <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>Category Forecasts</h3>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}} className="g3">
                   {A.catPred.map(({cat,avg,dir},i)=>(
@@ -933,7 +923,7 @@ const persistHiddenGoals = (next) => {
                     </div>
                   ))}
                 </div>
- 
+
                 <div className="card">
                   <h3 style={{fontSize:12,fontWeight:700,color:"var(--muted)",marginBottom:14,textTransform:"uppercase",letterSpacing:"1px"}}>Spending Trajectory</h3>
                   <ResponsiveContainer width="100%" height={220}>
@@ -952,7 +942,7 @@ const persistHiddenGoals = (next) => {
             )}
           </div>
         )}
- 
+
         {/* ═══ EXPENSES ═══ */}
         {tab==="expenses"&&(
           <div className="aFadeIn">
@@ -970,16 +960,16 @@ const persistHiddenGoals = (next) => {
               </div>
               <button onClick={()=>setModal("add")} className="btn-primary" style={{width:"auto",padding:"8px 20px",fontSize:13}}>+ Add</button>
             </div>
- 
+
             {filteredExp.length>0&&(
               <div style={{display:"flex",gap:12,marginBottom:12,fontSize:13,color:"var(--muted)",alignItems:"center",flexWrap:"wrap"}}>
-                <span>{filteredExp.length} transaction{filteredExp.length!==1?"s":""} from {MONTH_NAMES[selectedMonth]} {selectedYear} & {MONTH_NAMES[prevMonth]} {prevYear} from {MONTH_NAMES[selectedMonth]} {selectedYear} & {MONTH_NAMES[prevMonth]} {prevYear}</span>
+                <span>{filteredExp.length} transaction{filteredExp.length!==1?"s":""} from {MONTH_NAMES[selectedMonth]} {selectedYear} & {MONTH_NAMES[prevMonth]} {prevYear}</span>
                 <span>·</span>
                 <span style={{color:"var(--text)",fontFamily:"var(--mono)",fontWeight:700}}>{fmt(filteredExp.reduce((a,b)=>a+b.amount,0))}</span>
                 <span>total</span>
               </div>
             )}
- 
+
             {filteredExp.length===0?(
               <EmptyState image={heroImg} icon="📋" title={expenses.length===0?"No expenses yet":"No matches found"} sub={expenses.length===0?"Tap + Add to record your first expense — no sample data here, just yours!":"Try adjusting your search or filter."} action={expenses.length===0?"+ Add First Expense":null} onAction={()=>setModal("add")}/>
             ):(
@@ -1003,38 +993,23 @@ const persistHiddenGoals = (next) => {
 
                 <h3 style={{fontSize:14,fontWeight:700,marginBottom:16,color:"var(--text)"}}>📅 Week-wise Breakdown</h3>
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                  {/* Current Month Weeks */}
                   {A.weekwiseData.map((week,wi)=>{
                     const weekExp = week.transactions.filter(e=>{
                       const cOk=filterCat==="All"||e.category===filterCat;
                       const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
                       return cOk&&sOk;
                     }).sort((a,b)=>new Date(b.date)-new Date(a.date));
-                    
                     if(weekExp.length===0) return null;
-                    
                     return(
                       <div key={`curr-week-${week.week}`} className="card aFadeUp" style={{animationDelay:`${wi*0.1}s`,overflow:"hidden"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px",background:"rgba(79,158,255,.05)",borderBottom:"1px solid var(--border)",cursor:"pointer"}} className="week-header">
                           <div>
                             <h4 style={{fontSize:14,fontWeight:700,marginBottom:2}}>📍 {MONTH_NAMES[selectedMonth]} - {week.week===1?`1st Week`:week.week===2?`2nd Week`:week.week===3?`3rd Week`:`${week.week}th Week`}</h4>
-                            <span style={{fontSize:12,color:"var(--muted)"}}>{weekExp.length} transaction{weekExp.length!==1?"s":""} · {fmt(week.transactions.filter(e=>{
-                              const cOk=filterCat==="All"||e.category===filterCat;
-                              const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
-                              return cOk&&sOk;
-                            }).reduce((a,b)=>a+b.amount,0))}</span>
+                            <span style={{fontSize:12,color:"var(--muted)"}}>{weekExp.length} transaction{weekExp.length!==1?"s":""} · {fmt(week.transactions.filter(e=>{const cOk=filterCat==="All"||e.category===filterCat;const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());return cOk&&sOk;}).reduce((a,b)=>a+b.amount,0))}</span>
                           </div>
                           <div style={{textAlign:"right"}}>
-                            <div style={{fontFamily:"var(--mono)",fontWeight:800,fontSize:16,color:"var(--accent)"}}>{fmt(week.transactions.filter(e=>{
-                              const cOk=filterCat==="All"||e.category===filterCat;
-                              const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
-                              return cOk&&sOk;
-                            }).reduce((a,b)=>a+b.amount,0))}</div>
-                            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{budget>0?`${Math.round(week.transactions.filter(e=>{
-                              const cOk=filterCat==="All"||e.category===filterCat;
-                              const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
-                              return cOk&&sOk;
-                            }).reduce((a,b)=>a+b.amount,0)/budget*100)}% of monthly budget`:`Average/week`}</div>
+                            <div style={{fontFamily:"var(--mono)",fontWeight:800,fontSize:16,color:"var(--accent)"}}>{fmt(week.transactions.filter(e=>{const cOk=filterCat==="All"||e.category===filterCat;const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());return cOk&&sOk;}).reduce((a,b)=>a+b.amount,0))}</div>
+                            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{budget>0?`${Math.round(week.transactions.filter(e=>{const cOk=filterCat==="All"||e.category===filterCat;const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());return cOk&&sOk;}).reduce((a,b)=>a+b.amount,0)/budget*100)}% of monthly budget`:`Average/week`}</div>
                           </div>
                         </div>
                         <div style={{padding:"0"}}>
@@ -1052,34 +1027,23 @@ const persistHiddenGoals = (next) => {
                       </div>
                     );
                   })}
-                  
-                  {/* Previous Month Weeks */}
+
                   {prevMonthWeekwiseData.map((week,wi)=>{
                     const weekExp = week.transactions.filter(e=>{
                       const cOk=filterCat==="All"||e.category===filterCat;
                       const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
                       return cOk&&sOk;
                     }).sort((a,b)=>new Date(b.date)-new Date(a.date));
-                    
                     if(weekExp.length===0) return null;
-                    
                     return(
                       <div key={`prev-week-${week.week}`} className="card aFadeUp" style={{animationDelay:`${(A.weekwiseData.length + wi)*0.1}s`,overflow:"hidden"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px",background:"rgba(156,163,175,.05)",borderBottom:"1px solid var(--border)",cursor:"pointer"}} className="week-header">
                           <div>
                             <h4 style={{fontSize:14,fontWeight:700,marginBottom:2}}>📍 {MONTH_NAMES[prevMonth]} - {week.week===1?`1st Week`:week.week===2?`2nd Week`:week.week===3?`3rd Week`:`${week.week}th Week`}</h4>
-                            <span style={{fontSize:12,color:"var(--muted)"}}>{weekExp.length} transaction{weekExp.length!==1?"s":""} · {fmt(week.transactions.filter(e=>{
-                              const cOk=filterCat==="All"||e.category===filterCat;
-                              const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
-                              return cOk&&sOk;
-                            }).reduce((a,b)=>a+b.amount,0))}</span>
+                            <span style={{fontSize:12,color:"var(--muted)"}}>{weekExp.length} transaction{weekExp.length!==1?"s":""} · {fmt(week.transactions.filter(e=>{const cOk=filterCat==="All"||e.category===filterCat;const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());return cOk&&sOk;}).reduce((a,b)=>a+b.amount,0))}</span>
                           </div>
                           <div style={{textAlign:"right"}}>
-                            <div style={{fontFamily:"var(--mono)",fontWeight:800,fontSize:16,color:"var(--text-secondary)"}}>{fmt(week.transactions.filter(e=>{
-                              const cOk=filterCat==="All"||e.category===filterCat;
-                              const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());
-                              return cOk&&sOk;
-                            }).reduce((a,b)=>a+b.amount,0))}</div>
+                            <div style={{fontFamily:"var(--mono)",fontWeight:800,fontSize:16,color:"var(--text-secondary)"}}>{fmt(week.transactions.filter(e=>{const cOk=filterCat==="All"||e.category===filterCat;const sOk=!search||(e.notes||"").toLowerCase().includes(search.toLowerCase())||e.category.toLowerCase().includes(search.toLowerCase());return cOk&&sOk;}).reduce((a,b)=>a+b.amount,0))}</div>
                             <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Previous month</div>
                           </div>
                         </div>
@@ -1103,28 +1067,21 @@ const persistHiddenGoals = (next) => {
             )}
           </div>
         )}
- 
+
         {/* ═══ BUDGET ═══ */}
         {tab==="budget"&&(
           <div className="aFadeIn">
             <div className="card aFadeUp" style={{marginBottom:20}}>
               <h2 style={{fontWeight:800,fontSize:18,marginBottom:4}}>
-                💰 {[
-                  "January","February","March","April","May","June",
-                  "July","August","September","October","November","December"
-                ][selectedMonth]} {selectedYear} Budget
+                💰 {MONTH_NAMES[selectedMonth]} {selectedYear} Budget
               </h2>
               <p style={{fontSize:13,color:"var(--muted)",marginBottom:20}}>Set your monthly spending limit and SmartFinance will alert you when you're approaching it.</p>
 
-              {/* Month Selector */}
               <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end",marginBottom:20}}>
                 <div style={{flex:"1 1 150px"}}>
                   <label className="input-lbl">Month</label>
                   <select value={selectedMonth} onChange={e=>setSelectedMonth(Number(e.target.value))} style={{width:"100%"}}>
-                    {[
-                      "January","February","March","April","May","June",
-                      "July","August","September","October","November","December"
-                    ].map((month,i)=>(
+                    {MONTH_NAMES.map((month,i)=>(
                       <option key={i} value={i}>{month}</option>
                     ))}
                   </select>
@@ -1151,21 +1108,16 @@ const persistHiddenGoals = (next) => {
                 {budget>0&&<button className="btn-ghost" onClick={async()=>{setBudget(0);setBudgetInput("");await persistBudget(0);showToast("Budget cleared","info");}}>Clear</button>}
               </div>
             </div>
- 
+
             {budget>0?(
               <>
                 <div style={{background:displayBudgetPct>=90?"rgba(248,113,113,.05)":displayBudgetPct>=70?"rgba(251,191,36,.05)":"rgba(52,211,153,.05)",border:`1px solid ${displayBudgetPct>=90?"rgba(248,113,113,.2)":displayBudgetPct>=70?"rgba(251,191,36,.2)":"rgba(52,211,153,.2)"}`,borderRadius:22,padding:32,marginBottom:20,textAlign:"center",position:"relative",overflow:"hidden"}} className="aFadeUp d1">
                   <div style={{position:"absolute",top:20,right:20,fontSize:60,opacity:0.1}}>💰</div>
                   <div style={{fontSize:56,fontWeight:900,fontFamily:"var(--mono)",color:displayBudgetPct>=90?"var(--red)":displayBudgetPct>=70?"var(--amber)":"var(--green)",letterSpacing:"-1px"}}>{displayBudgetPct}<span style={{fontSize:28,fontWeight:500}}>%</span></div>
-                  <p style={{color:"var(--muted)",fontSize:14,marginTop:4}}>
-                    of selected month's budget used
-                  </p>
+                  <p style={{color:"var(--muted)",fontSize:14,marginTop:4}}>of selected month's budget used</p>
                   <div style={{maxWidth:400,margin:"20px auto"}} className="aFadeUp d2">
                     <div className="prog-bar" style={{height:10}}>
-                      <div className="prog-fill progress-animate" style={{
-                        width:`${displayBudgetPctBar}%`,
-                        background:displayBudgetPct>=90?"linear-gradient(90deg,var(--red),#dc2626)":displayBudgetPct>=70?"linear-gradient(90deg,var(--amber),var(--orange))":"linear-gradient(90deg,var(--accent),var(--green))"
-                      }}/>
+                      <div className="prog-fill progress-animate" style={{width:`${displayBudgetPctBar}%`,background:displayBudgetPct>=90?"linear-gradient(90deg,var(--red),#dc2626)":displayBudgetPct>=70?"linear-gradient(90deg,var(--amber),var(--orange))":"linear-gradient(90deg,var(--accent),var(--green))"}}/>
                     </div>
                   </div>
                   <div style={{display:"flex",justifyContent:"center",gap:40,flexWrap:"wrap"}} className="aFadeUp d3">
@@ -1222,25 +1174,22 @@ const persistHiddenGoals = (next) => {
                   </>
                 )}
 
-                {selectedMonth !== new Date().getMonth() || selectedYear !== new Date().getFullYear() ? (
+                {(selectedMonth !== new Date().getMonth() || selectedYear !== new Date().getFullYear()) && (
                   <div style={{background:"rgba(79,158,255,.05)",border:"1px solid rgba(79,158,255,.2)",borderRadius:16,padding:20,textAlign:"center"}} className="aFadeUp d4">
                     <div style={{fontSize:40,marginBottom:10}}>📅</div>
                     <h3 style={{fontSize:16,fontWeight:700,marginBottom:8}}>Future Month Budget</h3>
-                    <p style={{color:"var(--muted)",fontSize:14}}>You've set a budget of {fmt(budget)} for {[
-                      "January","February","March","April","May","June",
-                      "July","August","September","October","November","December"
-                    ][selectedMonth]} {selectedYear}. No spending data available yet.</p>
+                    <p style={{color:"var(--muted)",fontSize:14}}>You've set a budget of {fmt(budget)} for {MONTH_NAMES[selectedMonth]} {selectedYear}. No spending data available yet.</p>
                   </div>
-                ) : null}
+                )}
               </>
             ):(
-              <EmptyState image={heroImg} icon="💰" title="No budget set yet" sub={`Enter a monthly budget above to unlock progress tracking, smart alerts, and savings projections. You can set budgets for current or future months.`}/>
+              <EmptyState image={heroImg} icon="💰" title="No budget set yet" sub="Enter a monthly budget above to unlock progress tracking, smart alerts, and savings projections. You can set budgets for current or future months."/>
             )}
           </div>
         )}
- 
+
       </div>
- 
+
       {modal&&<ExpenseModal initial={modal!=="add"?modal:null} onSave={addOrUpdate} onClose={()=>setModal(null)}/>}
       {toast&&<Toast {...toast} onDone={()=>setToast(null)}/>}
     </div>
