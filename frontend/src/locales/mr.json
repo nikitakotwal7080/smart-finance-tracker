@@ -1,9 +1,23 @@
 {
   "dashboard": "डॅशबोर्ड",
-  "expenses": "खर्च",
-  "budget": "बजेट",
+  "insights": "विश्लेषण",
   "savings": "बचत",
-  "insights": "माहिती",
   "predictions": "अंदाज",
-  "addExpense": "खर्च जोडा"
+  "expenses": "खर्च",
+  "budget": "अर्थसंकल्प",
+  "keyInsights": "मुख्य माहिती",
+  "seeAll": "सर्व पहा",
+  "Welcome to SmartFinance!": "SmartFinance मध्ये आपले स्वागत आहे!",
+  "Add your first expense to see your personal financial dashboard with charts, insights, and predictions.": "चार्ट, विश्लेषण आणि अंदाजासह आपला वैयक्तिक आर्थिक डॅशबोर्ड पाहण्यासाठी पहिला खर्च जोडा.",
+  "+ Add First Expense": "+ पहिला खर्च जोडा",
+  "No data to analyze yet": "अद्याप विश्लेषणासाठी डेटा नाही",
+  "Start tracking your expenses and come back here to discover powerful patterns in your spending habits.": "आपले खर्च ट्रॅक करा आणि आपल्या खर्चाच्या सवयींमधील नमुने जाणून घेण्यासाठी परत या.",
+  "+ Add Expense": "+ खर्च जोडा",
+  "No expenses yet": "अद्याप कोणताही खर्च नाही",
+  "Add expenses first to generate personalized savings advice.": "वैयक्तिक बचत सल्ल्यासाठी आधी खर्च जोडा.",
+  "Need more data for predictions": "अंदाजासाठी अधिक डेटा हवा",
+  "Keep tracking for 2+ months and the prediction engine will forecast your future spending automatically.": "2+ महिने ट्रॅक करत राहा आणि अंदाज इंजिन आपोआप भविष्यातील खर्चाचा अंदाज देईल.",
+  "No budget set yet": "अद्याप कोणताही अर्थसंकल्प नाही",
+  "Enter a monthly budget above to unlock progress tracking, smart alerts, and savings projections. You can set budgets for current or future months.": "प्रगती ट्रॅकिंग, स्मार्ट सूचना आणि बचत अंदाज अनलॉक करण्यासाठी वर मासिक अर्थसंकल्प प्रविष्ट करा.",
+  "selectLanguage": "भाषा"
 }

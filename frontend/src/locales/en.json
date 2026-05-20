@@ -1,9 +1,23 @@
 {
   "dashboard": "Dashboard",
+  "insights": "Insights",
+  "savings": "Savings",
+  "predictions": "Predictions",
   "expenses": "Expenses",
   "budget": "Budget",
-  "savings": "Savings",
-  "insights": "Insights",
-  "predictions": "Predictions",
-  "addExpense": "Add Expense"
+  "keyInsights": "Key Insights",
+  "seeAll": "See All",
+  "Welcome to SmartFinance!": "Welcome to SmartFinance!",
+  "Add your first expense to see your personal financial dashboard with charts, insights, and predictions.": "Add your first expense to see your personal financial dashboard with charts, insights, and predictions.",
+  "+ Add First Expense": "+ Add First Expense",
+  "No data to analyze yet": "No data to analyze yet",
+  "Start tracking your expenses and come back here to discover powerful patterns in your spending habits.": "Start tracking your expenses and come back here to discover powerful patterns in your spending habits.",
+  "+ Add Expense": "+ Add Expense",
+  "No expenses yet": "No expenses yet",
+  "Add expenses first to generate personalized savings advice.": "Add expenses first to generate personalized savings advice.",
+  "Need more data for predictions": "Need more data for predictions",
+  "Keep tracking for 2+ months and the prediction engine will forecast your future spending automatically.": "Keep tracking for 2+ months and the prediction engine will forecast your future spending automatically.",
+  "No budget set yet": "No budget set yet",
+  "Enter a monthly budget above to unlock progress tracking, smart alerts, and savings projections. You can set budgets for current or future months.": "Enter a monthly budget above to unlock progress tracking, smart alerts, and savings projections. You can set budgets for current or future months.",
+  "selectLanguage": "Language"
 }

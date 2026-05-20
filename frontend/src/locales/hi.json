@@ -1,9 +1,23 @@
 {
   "dashboard": "डैशबोर्ड",
+  "insights": "विश्लेषण",
+  "savings": "बचत",
+  "predictions": "अनुमान",
   "expenses": "खर्च",
   "budget": "बजट",
-  "savings": "बचत",
-  "insights": "जानकारी",
-  "predictions": "भविष्यवाणी",
-  "addExpense": "खर्च जोड़ें"
+  "keyInsights": "मुख्य जानकारी",
+  "seeAll": "सब देखें",
+  "Welcome to SmartFinance!": "SmartFinance में आपका स्वागत है!",
+  "Add your first expense to see your personal financial dashboard with charts, insights, and predictions.": "चार्ट, विश्लेषण और अनुमान के साथ अपना वित्तीय डैशबोर्ड देखने के लिए पहला खर्च जोड़ें।",
+  "+ Add First Expense": "+ पहला खर्च जोड़ें",
+  "No data to analyze yet": "अभी तक कोई डेटा नहीं",
+  "Start tracking your expenses and come back here to discover powerful patterns in your spending habits.": "अपने खर्चों को ट्रैक करें और अपनी खर्च की आदतों में पैटर्न जानने के लिए वापस आएं।",
+  "+ Add Expense": "+ खर्च जोड़ें",
+  "No expenses yet": "अभी कोई खर्च नहीं",
+  "Add expenses first to generate personalized savings advice.": "व्यक्तिगत बचत सलाह के लिए पहले खर्च जोड़ें।",
+  "Need more data for predictions": "अनुमान के लिए अधिक डेटा चाहिए",
+  "Keep tracking for 2+ months and the prediction engine will forecast your future spending automatically.": "2+ महीने ट्रैक करते रहें और अनुमान इंजन स्वचालित रूप से भविष्य का खर्च बताएगा।",
+  "No budget set yet": "अभी तक कोई बजट नहीं",
+  "Enter a monthly budget above to unlock progress tracking, smart alerts, and savings projections. You can set budgets for current or future months.": "प्रगति ट्रैकिंग, स्मार्ट अलर्ट और बचत अनुमान अनलॉक करने के लिए ऊपर मासिक बजट दर्ज करें।",
+  "selectLanguage": "भाषा"
 }
